@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* custom */
+:root{
+  --bg: #0f172a;
+}
+
+/* small utility */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
