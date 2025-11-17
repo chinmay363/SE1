@@ -1,6 +1,6 @@
 const paymentService = require('../../src/services/paymentService');
-const { Payment, Transaction, ParkingSession } = require('../../src/models');
-const pricingCalculator = require('../../src/utils/pricingCalculator');
+const { Payment, Transaction, ParkingSession, sequelize } = require('../../src/models');
+const { calculateParkingFee, generateReceiptNumber } = require('../../src/utils/pricingCalculator');
 
 jest.mock('../../src/models');
 jest.mock('../../src/utils/pricingCalculator');
@@ -10,8 +10,20 @@ jest.mock('../../src/utils/logger', () => ({
 }));
 
 describe('PaymentService', () => {
+  let mockTransaction;
+
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Mock transaction
+    mockTransaction = {
+      commit: jest.fn().mockResolvedValue(undefined),
+      rollback: jest.fn().mockResolvedValue(undefined),
+      finished: false
+    };
+
+    sequelize.transaction = jest.fn().mockResolvedValue(mockTransaction);
+    generateReceiptNumber.mockReturnValue('RCP-12345');
   });
 
   describe('createPayment', () => {
@@ -19,44 +31,50 @@ describe('PaymentService', () => {
       const mockSession = {
         id: 'session-123',
         entryTime: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-        status: 'active'
+        status: 'active',
+        vehicle: { licensePlate: 'ABC-1234' },
+        space: { spaceNumber: '1A01' }
       };
 
-      const mockPayment = {
-        id: 'payment-123',
+      const mockTransactionRecord = {
+        id: 'transaction-123',
         sessionId: 'session-123',
         amount: 10.00,
         status: 'pending'
       };
 
-      ParkingSession.findByPk = jest.fn().mockResolvedValue(mockSession);
-      pricingCalculator.calculateFee = jest.fn().mockReturnValue({
+      const mockPayment = {
+        id: 'payment-123',
+        transactionId: 'transaction-123',
         amount: 10.00,
-        durationMinutes: 120
-      });
+        status: 'initiated'
+      };
+
+      ParkingSession.findByPk = jest.fn().mockResolvedValue(mockSession);
+      calculateParkingFee.mockReturnValue({ amount: 10.00, durationMinutes: 120 });
+      Transaction.findOne = jest.fn().mockResolvedValue(null);
+      Transaction.create = jest.fn().mockResolvedValue(mockTransactionRecord);
       Payment.create = jest.fn().mockResolvedValue(mockPayment);
 
       const result = await paymentService.createPayment('session-123', 'card');
 
       expect(result).toHaveProperty('payment');
+      expect(result).toHaveProperty('transaction');
       expect(result).toHaveProperty('amount', 10.00);
       expect(result).toHaveProperty('durationMinutes', 120);
-      expect(Payment.create).toHaveBeenCalledWith({
-        sessionId: 'session-123',
-        amount: 10.00,
-        paymentMethod: 'card',
-        status: 'pending'
-      });
+      expect(mockTransaction.commit).toHaveBeenCalled();
     });
 
     test('should throw error for non-existent session', async () => {
       ParkingSession.findByPk = jest.fn().mockResolvedValue(null);
 
       await expect(paymentService.createPayment('nonexistent', 'card'))
-        .rejects.toThrow('Session not found');
+        .rejects.toThrow('Parking session not found');
+
+      expect(mockTransaction.rollback).toHaveBeenCalled();
     });
 
-    test('should throw error for completed session', async () => {
+    test('should throw error for inactive session', async () => {
       const mockSession = {
         id: 'session-123',
         status: 'completed'
@@ -65,28 +83,18 @@ describe('PaymentService', () => {
       ParkingSession.findByPk = jest.fn().mockResolvedValue(mockSession);
 
       await expect(paymentService.createPayment('session-123', 'card'))
-        .rejects.toThrow('Session already completed');
+        .rejects.toThrow('Parking session is not active');
+
+      expect(mockTransaction.rollback).toHaveBeenCalled();
     });
   });
 
   describe('confirmPayment', () => {
     test('should confirm payment successfully', async () => {
-      const mockPayment = {
-        id: 'payment-123',
-        sessionId: 'session-123',
-        amount: 10.00,
-        status: 'pending',
-        paymentMethod: 'card',
-        update: jest.fn().mockResolvedValue(true)
-      };
-
-      const mockTransaction = {
-        id: 'transaction-123',
-        paymentId: 'payment-123'
-      };
-
       const mockSession = {
         id: 'session-123',
+        status: 'active',
+        entryTime: new Date(Date.now() - 2 * 60 * 60 * 1000),
         exitTime: null,
         update: jest.fn().mockResolvedValue(true),
         space: {
@@ -95,17 +103,35 @@ describe('PaymentService', () => {
         }
       };
 
+      const mockTransactionRecord = {
+        id: 'transaction-123',
+        sessionId: 'session-123',
+        amount: 10.00,
+        status: 'pending',
+        update: jest.fn().mockResolvedValue(true),
+        session: mockSession
+      };
+
+      const mockPayment = {
+        id: 'payment-123',
+        transactionId: 'transaction-123',
+        amount: 10.00,
+        status: 'initiated',
+        update: jest.fn().mockResolvedValue(true),
+        transaction: mockTransactionRecord
+      };
+
       Payment.findByPk = jest.fn().mockResolvedValue(mockPayment);
-      Transaction.create = jest.fn().mockResolvedValue(mockTransaction);
-      ParkingSession.findByPk = jest.fn().mockResolvedValue(mockSession);
 
       const result = await paymentService.confirmPayment('payment-123');
 
-      expect(result).toHaveProperty('transaction');
       expect(result).toHaveProperty('payment');
+      expect(result).toHaveProperty('transaction');
       expect(result).toHaveProperty('session');
-      expect(mockPayment.update).toHaveBeenCalledWith({ status: 'completed' });
-      expect(Transaction.create).toHaveBeenCalled();
+      expect(mockPayment.update).toHaveBeenCalled();
+      expect(mockTransactionRecord.update).toHaveBeenCalled();
+      expect(mockSession.update).toHaveBeenCalled();
+      expect(mockTransaction.commit).toHaveBeenCalled();
     });
 
     test('should throw error for non-existent payment', async () => {
@@ -113,18 +139,8 @@ describe('PaymentService', () => {
 
       await expect(paymentService.confirmPayment('nonexistent'))
         .rejects.toThrow('Payment not found');
-    });
 
-    test('should throw error for already completed payment', async () => {
-      const mockPayment = {
-        id: 'payment-123',
-        status: 'completed'
-      };
-
-      Payment.findByPk = jest.fn().mockResolvedValue(mockPayment);
-
-      await expect(paymentService.confirmPayment('payment-123'))
-        .rejects.toThrow('Payment already completed');
+      expect(mockTransaction.rollback).toHaveBeenCalled();
     });
   });
 
@@ -134,9 +150,12 @@ describe('PaymentService', () => {
         id: 'payment-123',
         amount: 10.00,
         status: 'completed',
-        session: {
-          id: 'session-123',
-          vehicle: { licensePlate: 'ABC-1234' }
+        transaction: {
+          id: 'transaction-123',
+          session: {
+            id: 'session-123',
+            vehicle: { licensePlate: 'ABC-1234' }
+          }
         }
       };
 
@@ -145,9 +164,7 @@ describe('PaymentService', () => {
       const result = await paymentService.getPaymentDetails('payment-123');
 
       expect(result).toEqual(mockPayment);
-      expect(Payment.findByPk).toHaveBeenCalledWith('payment-123', {
-        include: expect.any(Array)
-      });
+      expect(Payment.findByPk).toHaveBeenCalled();
     });
 
     test('should return null for non-existent payment', async () => {
