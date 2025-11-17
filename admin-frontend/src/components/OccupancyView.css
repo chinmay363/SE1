@@ -1,0 +1,89 @@
+.occupancy-view {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+}
+
+.occupancy-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.occupancy-stats .stat {
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.occupancy-stats .stat.available {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.occupancy-stats .stat.occupied {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.occupancy-stats .stat.maintenance {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.occupancy-stats .stat.total {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.occupancy-stats .stat h3 {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.occupancy-stats .stat p {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.spaces-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 0.5rem;
+}
+
+.space-item {
+  padding: 1rem;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.space-item.available {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.space-item.occupied {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.space-item.maintenance {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.space-number {
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.space-status {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}

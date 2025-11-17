@@ -1,0 +1,69 @@
+.logs-view {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+}
+
+.logs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.logs-header select {
+  padding: 8px 16px;
+  border: 2px solid #d1d5db;
+  border-radius: 6px;
+}
+
+.logs-table {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: #f9fafb;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+th {
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge.info {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge.warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+tr:hover {
+  background: #f9fafb;
+}
