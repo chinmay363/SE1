@@ -19,23 +19,18 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: |
-            backend/package-lock.json
-            admin-frontend/package-lock.json
-            terminal-ui/package-lock.json
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: npm install
 
       - name: Install admin-frontend dependencies
         working-directory: ./admin-frontend
-        run: npm ci
+        run: npm install
 
       - name: Install terminal-ui dependencies
         working-directory: ./terminal-ui
-        run: npm ci
+        run: npm install
 
       - name: Build admin-frontend
         working-directory: ./admin-frontend
@@ -76,7 +71,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: npm install
 
       - name: Run unit tests
         working-directory: ./backend
@@ -129,7 +124,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: npm install
 
       - name: Generate coverage report
         working-directory: ./backend
@@ -172,7 +167,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: npm install
 
       - name: Run ESLint
         working-directory: ./backend
@@ -206,7 +201,7 @@ jobs:
 
       - name: Install backend dependencies
         working-directory: ./backend
-        run: npm ci
+        run: npm install
 
       - name: Run npm audit
         working-directory: ./backend
