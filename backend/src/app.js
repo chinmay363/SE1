@@ -58,8 +58,6 @@ app.get('/health', (req, res) => {
 app.use('/auth', authRoutes);
 app.use('/identify', lprRoutes);
 app.use('/parking', parkingRoutes);
-app.use('/allocate', parkingRoutes); // Alias for POST /allocate
-app.use('/spaces', parkingRoutes); // Alias for GET /spaces
 app.use('/barrier', barrierRoutes);
 app.use('/payment', paymentRoutes);
 app.use('/admin', adminRoutes);

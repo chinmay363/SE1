@@ -73,6 +73,17 @@ jobs:
         working-directory: ./backend
         run: npm install
 
+      - name: Run database migrations
+        working-directory: ./backend
+        run: npm run migrate
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: apms_user
+          DB_PASSWORD: apms_password
+          DB_NAME: apms_test
+          NODE_ENV: test
+
       - name: Run unit tests
         working-directory: ./backend
         run: npx jest tests/unit
@@ -125,6 +136,17 @@ jobs:
       - name: Install backend dependencies
         working-directory: ./backend
         run: npm install
+
+      - name: Run database migrations
+        working-directory: ./backend
+        run: npm run migrate
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: apms_user
+          DB_PASSWORD: apms_password
+          DB_NAME: apms_test
+          NODE_ENV: test
 
       - name: Generate coverage report
         working-directory: ./backend

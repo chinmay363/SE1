@@ -3,6 +3,6 @@ const router = express.Router();
 const lprController = require('../controllers/lprController');
 const { identifyValidation } = require('../middleware/validation');
 
-router.post('/identify', identifyValidation, lprController.identify);
+router.post('/', identifyValidation, lprController.identify);
 
 module.exports = router;
