@@ -46,7 +46,7 @@ describe('Payment Flow Integration Tests', () => {
         .post('/payment/create')
         .send({
           sessionId,
-          paymentMethod: 'card'
+          paymentMethod: 'credit_card'
         });
 
       expect(createRes.status).toBe(200);
