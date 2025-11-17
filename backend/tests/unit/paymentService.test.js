@@ -22,6 +22,16 @@ describe('PaymentService', () => {
       finished: false
     };
 
+    // Mock sequelize Transaction with ISOLATION_LEVELS
+    sequelize.Transaction = {
+      ISOLATION_LEVELS: {
+        SERIALIZABLE: 'SERIALIZABLE',
+        READ_COMMITTED: 'READ_COMMITTED',
+        READ_UNCOMMITTED: 'READ_UNCOMMITTED',
+        REPEATABLE_READ: 'REPEATABLE_READ'
+      }
+    };
+
     sequelize.transaction = jest.fn().mockResolvedValue(mockTransaction);
     generateReceiptNumber.mockReturnValue('RCP-12345');
   });
@@ -56,7 +66,7 @@ describe('PaymentService', () => {
       Transaction.create = jest.fn().mockResolvedValue(mockTransactionRecord);
       Payment.create = jest.fn().mockResolvedValue(mockPayment);
 
-      const result = await paymentService.createPayment('session-123', 'card');
+      const result = await paymentService.createPayment('session-123', 'credit_card');
 
       expect(result).toHaveProperty('payment');
       expect(result).toHaveProperty('transaction');
@@ -68,7 +78,7 @@ describe('PaymentService', () => {
     test('should throw error for non-existent session', async () => {
       ParkingSession.findByPk = jest.fn().mockResolvedValue(null);
 
-      await expect(paymentService.createPayment('nonexistent', 'card'))
+      await expect(paymentService.createPayment('nonexistent', 'credit_card'))
         .rejects.toThrow('Parking session not found');
 
       expect(mockTransaction.rollback).toHaveBeenCalled();
@@ -82,7 +92,7 @@ describe('PaymentService', () => {
 
       ParkingSession.findByPk = jest.fn().mockResolvedValue(mockSession);
 
-      await expect(paymentService.createPayment('session-123', 'card'))
+      await expect(paymentService.createPayment('session-123', 'credit_card'))
         .rejects.toThrow('Parking session is not active');
 
       expect(mockTransaction.rollback).toHaveBeenCalled();

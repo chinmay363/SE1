@@ -15,8 +15,18 @@ const calculateParkingFee = (entryTime, exitTime) => {
   // Calculate hours (round up)
   let hours = Math.ceil(durationMinutes / 60);
 
-  // Get hourly rate from environment
-  const hourlyRate = parseFloat(process.env.HOURLY_RATE) || 5.0;
+  // Determine if it's a weekend (Saturday = 6, Sunday = 0)
+  const dayOfWeek = entry.getDay();
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+  // Get hourly rate from environment based on weekend/weekday
+  let hourlyRate;
+  if (isWeekend && process.env.WEEKEND_HOURLY_RATE) {
+    hourlyRate = parseFloat(process.env.WEEKEND_HOURLY_RATE);
+  } else {
+    hourlyRate = parseFloat(process.env.HOURLY_RATE) || 5.0;
+  }
+
   const firstHourFree = process.env.FIRST_HOUR_FREE === 'true';
 
   // Apply first hour free if applicable
