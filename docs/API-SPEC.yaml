@@ -1,0 +1,406 @@
+openapi: 3.0.0
+info:
+  title: APMS API
+  description: Automated Parking Management System REST API
+  version: 1.0.0
+  contact:
+    name: APMS Team
+servers:
+  - url: http://localhost:3000
+    description: Development server
+
+tags:
+  - name: Authentication
+  - name: License Plate Recognition
+  - name: Parking Management
+  - name: Barrier Control
+  - name: Payment
+  - name: Admin
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      accessToken:
+                        type: string
+                      refreshToken:
+                        type: string
+
+  /identify:
+    post:
+      tags:
+        - License Plate Recognition
+      summary: Identify license plate from image
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  description: Base64 encoded image
+                simulateFailure:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: License plate identified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      licensePlate:
+                        type: string
+                      confidence:
+                        type: number
+                      processingTime:
+                        type: number
+
+  /parking/allocate:
+    post:
+      tags:
+        - Parking Management
+      summary: Allocate parking space
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - licensePlate
+              properties:
+                licensePlate:
+                  type: string
+                preferredZone:
+                  type: string
+                preferredFloor:
+                  type: integer
+      responses:
+        '200':
+          description: Space allocated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      session:
+                        $ref: '#/components/schemas/ParkingSession'
+                      space:
+                        $ref: '#/components/schemas/ParkingSpace'
+                      vehicle:
+                        $ref: '#/components/schemas/Vehicle'
+
+  /parking/spaces:
+    get:
+      tags:
+        - Parking Management
+      summary: Get all parking spaces
+      responses:
+        '200':
+          description: List of spaces
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ParkingSpace'
+
+  /barrier/entry:
+    post:
+      tags:
+        - Barrier Control
+      summary: Open entry barrier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionId
+              properties:
+                sessionId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Barrier opened
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      openTime:
+                        type: string
+                        format: date-time
+
+  /payment/create:
+    post:
+      tags:
+        - Payment
+      summary: Create payment transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionId
+                - paymentMethod
+              properties:
+                sessionId:
+                  type: string
+                  format: uuid
+                paymentMethod:
+                  type: string
+                  enum: [cash, card, digital_wallet, mobile]
+      responses:
+        '200':
+          description: Payment created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      payment:
+                        $ref: '#/components/schemas/Payment'
+                      amount:
+                        type: number
+
+  /payment/confirm:
+    post:
+      tags:
+        - Payment
+      summary: Confirm payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - paymentId
+              properties:
+                paymentId:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Payment confirmed
+
+  /admin/occupancy:
+    get:
+      tags:
+        - Admin
+      summary: Get real-time occupancy data
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Occupancy data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                  available:
+                    type: integer
+                  occupied:
+                    type: integer
+                  occupancyRate:
+                    type: string
+
+  /admin/revenue:
+    get:
+      tags:
+        - Admin
+      summary: Get revenue analytics
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Revenue data
+
+  /admin/logs:
+    get:
+      tags:
+        - Admin
+      summary: Get system logs
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: level
+          in: query
+          schema:
+            type: string
+            enum: [info, warn, error, debug]
+      responses:
+        '200':
+          description: System logs
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, technician]
+
+    Vehicle:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        licensePlate:
+          type: string
+        visitCount:
+          type: integer
+
+    ParkingSpace:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        spaceNumber:
+          type: string
+        floor:
+          type: integer
+        zone:
+          type: string
+        status:
+          type: string
+          enum: [available, occupied, reserved, maintenance]
+        type:
+          type: string
+          enum: [regular, handicap, electric, vip]
+
+    ParkingSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+        spaceId:
+          type: string
+          format: uuid
+        entryTime:
+          type: string
+          format: date-time
+        exitTime:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [active, completed, cancelled]
+
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        transactionId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        paymentMethod:
+          type: string
+        status:
+          type: string
+          enum: [initiated, processing, completed, failed]

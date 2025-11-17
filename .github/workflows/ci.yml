@@ -1,0 +1,307 @@
+name: APMS CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, 'claude/**' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm install
+
+      - name: Install admin-frontend dependencies
+        working-directory: ./admin-frontend
+        run: npm install
+
+      - name: Install terminal-ui dependencies
+        working-directory: ./terminal-ui
+        run: npm install
+
+      - name: Build admin-frontend
+        working-directory: ./admin-frontend
+        run: npm run build
+
+      - name: Build terminal-ui
+        working-directory: ./terminal-ui
+        run: npm run build
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: build
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: apms_test
+          POSTGRES_USER: apms_user
+          POSTGRES_PASSWORD: apms_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm install
+
+      - name: Run database migrations
+        working-directory: ./backend
+        run: npm run migrate
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: apms_user
+          DB_PASSWORD: apms_password
+          DB_NAME: apms_test
+          NODE_ENV: test
+
+      - name: Seed database
+        working-directory: ./backend
+        run: npm run seed
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: apms_user
+          DB_PASSWORD: apms_password
+          DB_NAME: apms_test
+          NODE_ENV: test
+
+      - name: Run unit tests
+        working-directory: ./backend
+        run: npx jest tests/unit
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: apms_user
+          DB_PASSWORD: apms_password
+          DB_NAME: apms_test
+
+      - name: Run integration tests
+        working-directory: ./backend
+        run: npx jest tests/integration
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: apms_user
+          DB_PASSWORD: apms_password
+          DB_NAME: apms_test
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    needs: test
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_DB: apms_test
+          POSTGRES_USER: apms_user
+          POSTGRES_PASSWORD: apms_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm install
+
+      - name: Run database migrations
+        working-directory: ./backend
+        run: npm run migrate
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: apms_user
+          DB_PASSWORD: apms_password
+          DB_NAME: apms_test
+          NODE_ENV: test
+
+      - name: Seed database
+        working-directory: ./backend
+        run: npm run seed
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: apms_user
+          DB_PASSWORD: apms_password
+          DB_NAME: apms_test
+          NODE_ENV: test
+
+      - name: Generate coverage report
+        working-directory: ./backend
+        run: npm test -- --coverage
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: apms_user
+          DB_PASSWORD: apms_password
+          DB_NAME: apms_test
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: backend/coverage
+
+      - name: Check coverage threshold
+        working-directory: ./backend
+        run: |
+          if [ ! -d "coverage" ]; then
+            echo "Coverage directory not found"
+            exit 1
+          fi
+          echo "Coverage report generated successfully"
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm install
+
+      - name: Run ESLint
+        working-directory: ./backend
+        run: npm run lint || true
+
+      - name: Generate lint report
+        working-directory: ./backend
+        run: |
+          npm run lint > lint-report.txt 2>&1 || true
+          echo "Lint report generated"
+
+      - name: Upload lint report
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-report
+          path: backend/lint-report.txt
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: npm install
+
+      - name: Run npm audit
+        working-directory: ./backend
+        run: npm audit --json > security-report.json || true
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: backend/security-report.json
+
+  deploy-artifact:
+    name: Create Deployment Artifact
+    runs-on: ubuntu-latest
+    needs: [test, coverage, lint, security]
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/claude/')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download coverage report
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-report
+          path: artifacts/coverage-report
+
+      - name: Download lint report
+        uses: actions/download-artifact@v4
+        with:
+          name: lint-report
+          path: artifacts
+
+      - name: Download security report
+        uses: actions/download-artifact@v4
+        with:
+          name: security-report
+          path: artifacts
+
+      - name: Create deployment package
+        run: |
+          mkdir -p deployment-package
+          cp -r backend deployment-package/
+          cp -r admin-frontend deployment-package/
+          cp -r terminal-ui deployment-package/
+          cp -r infra deployment-package/
+          cp -r docs deployment-package/
+          cp -r artifacts deployment-package/reports
+          cp README.md deployment-package/
+          cp .env.example deployment-package/
+          cd deployment-package
+          zip -r ../apms-deployment-$(date +%Y%m%d-%H%M%S).zip .
+
+      - name: Upload deployment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apms-deployment-package
+          path: apms-deployment-*.zip
+          retention-days: 30

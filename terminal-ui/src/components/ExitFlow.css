@@ -1,0 +1,65 @@
+.exit-flow {
+  background: white;
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.exit-flow h2 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  color: var(--primary-color);
+}
+
+.license-input {
+  width: 300px;
+  text-align: center;
+  font-size: 2rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.payment-summary {
+  width: 100%;
+  max-width: 600px;
+  background: #f9fafb;
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  margin: 1rem 0;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 1.2rem;
+}
+
+.summary-item:last-child {
+  border-bottom: none;
+}
+
+.summary-item.total {
+  margin-top: 1rem;
+  padding-top: 1.5rem;
+  border-top: 3px solid var(--primary-color);
+  font-size: 1.5rem;
+}
+
+.summary-item .label {
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.summary-item .value {
+  font-weight: bold;
+  color: var(--text-color);
+}
+
+.summary-item.total .value {
+  color: var(--primary-color);
+  font-size: 2rem;
+}
