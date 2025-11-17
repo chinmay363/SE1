@@ -14,7 +14,8 @@ class LPRService {
    */
   async identifyPlate(imageData, simulateFailure = false) {
     const processingDelay = parseInt(process.env.LPR_PROCESSING_DELAY_MS) || 1000;
-    const failureRate = parseFloat(process.env.LPR_FAILURE_RATE) || 0.05;
+    const parsedFailureRate = parseFloat(process.env.LPR_FAILURE_RATE);
+    const failureRate = isNaN(parsedFailureRate) ? 0.05 : parsedFailureRate;
 
     // Simulate processing delay
     await this.delay(processingDelay);

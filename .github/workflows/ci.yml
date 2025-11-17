@@ -294,8 +294,8 @@ jobs:
           cp -r infra deployment-package/
           cp -r docs deployment-package/
           cp -r artifacts deployment-package/reports
-          cp README.md deployment-package/
           cp .env.example deployment-package/
+          [ -f README.md ] && cp README.md deployment-package/ || true
           cd deployment-package
           zip -r ../apms-deployment-$(date +%Y%m%d-%H%M%S).zip .
 
