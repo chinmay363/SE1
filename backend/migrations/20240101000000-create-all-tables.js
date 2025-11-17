@@ -229,7 +229,7 @@ module.exports = {
         defaultValue: 'pending'
       },
       payment_method: {
-        type: Sequelize.ENUM('cash', 'card', 'digital_wallet', 'mobile')
+        type: Sequelize.ENUM('credit_card', 'debit_card', 'cash', 'mobile_wallet', 'upi')
       },
       receipt_number: {
         type: Sequelize.STRING,

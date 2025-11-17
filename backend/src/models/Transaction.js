@@ -30,7 +30,7 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: 'pending'
     },
     paymentMethod: {
-      type: DataTypes.ENUM('cash', 'card', 'digital_wallet', 'mobile'),
+      type: DataTypes.ENUM('credit_card', 'debit_card', 'cash', 'mobile_wallet', 'upi'),
       field: 'payment_method'
     },
     receiptNumber: {
