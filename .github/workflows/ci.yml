@@ -75,7 +75,7 @@ jobs:
 
       - name: Run unit tests
         working-directory: ./backend
-        run: npm run test:unit
+        run: jest tests/unit
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -85,7 +85,7 @@ jobs:
 
       - name: Run integration tests
         working-directory: ./backend
-        run: npm run test:integration
+        run: jest tests/integration
         env:
           DB_HOST: localhost
           DB_PORT: 5432
@@ -137,7 +137,7 @@ jobs:
           DB_NAME: apms_test
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: backend/coverage
@@ -180,7 +180,7 @@ jobs:
           echo "Lint report generated"
 
       - name: Upload lint report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: lint-report
           path: backend/lint-report.txt
@@ -208,7 +208,7 @@ jobs:
         run: npm audit --json > security-report.json || true
 
       - name: Upload security report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: security-report
           path: backend/security-report.json
@@ -224,19 +224,19 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Download coverage report
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: coverage-report
           path: artifacts/coverage-report
 
       - name: Download lint report
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: lint-report
           path: artifacts
 
       - name: Download security report
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: security-report
           path: artifacts
@@ -256,7 +256,7 @@ jobs:
           zip -r ../apms-deployment-$(date +%Y%m%d-%H%M%S).zip .
 
       - name: Upload deployment artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: apms-deployment-package
           path: apms-deployment-*.zip
