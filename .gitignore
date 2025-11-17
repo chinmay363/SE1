@@ -33,3 +33,6 @@ build/
 
 # Uploads
 uploads/
+
+# Local documentation (not to be committed)
+USER_STORY_MAPPING.md
