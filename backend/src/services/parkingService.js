@@ -101,7 +101,10 @@ class ParkingService {
         vehicle
       };
     } catch (error) {
-      await transaction.rollback();
+      // Only rollback if transaction hasn't been finished yet
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
       logger.error('Space allocation error:', error);
       throw error;
     }
@@ -134,7 +137,10 @@ class ParkingService {
 
       return space;
     } catch (error) {
-      await transaction.rollback();
+      // Only rollback if transaction hasn't been finished yet
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
       logger.error('Space release error:', error);
       throw error;
     }

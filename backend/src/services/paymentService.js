@@ -82,7 +82,10 @@ class PaymentService {
         durationMinutes
       };
     } catch (error) {
-      await transaction.rollback();
+      // Only rollback if transaction hasn't been finished yet
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
       logger.error('Payment creation error:', error);
       throw error;
     }
@@ -160,7 +163,10 @@ class PaymentService {
         session: payment.transaction.session
       };
     } catch (error) {
-      await transaction.rollback();
+      // Only rollback if transaction hasn't been finished yet
+      if (!transaction.finished) {
+        await transaction.rollback();
+      }
       await this.logSystemEvent('payment_failed', 'medium',
         `Payment failed: ${error.message}`);
       logger.error('Payment confirmation error:', error);
