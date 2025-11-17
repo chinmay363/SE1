@@ -4,7 +4,8 @@ const { ParkingSpace, ParkingSession, Transaction, Vehicle, SystemEvent, sequeli
 jest.mock('../../src/models');
 jest.mock('../../src/utils/logger', () => ({
   info: jest.fn(),
-  error: jest.fn()
+  error: jest.fn(),
+  debug: jest.fn()
 }));
 
 describe('AdminService', () => {

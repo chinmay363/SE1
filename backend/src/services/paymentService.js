@@ -3,7 +3,31 @@ const { calculateParkingFee, generateReceiptNumber } = require('../utils/pricing
 const logger = require('../utils/logger');
 const { SystemEvent } = require('../models');
 
+const PAYMENT_CONFIG = {
+  SUPPORTED_METHODS: ['credit_card', 'debit_card', 'cash', 'mobile_wallet', 'upi']
+};
+
+class PaymentError extends Error {
+  constructor(message, code) {
+    super(message);
+    this.name = 'PaymentError';
+    this.code = code;
+  }
+}
+
 class PaymentService {
+  /**
+   * Validate payment method
+   * @param {string} paymentMethod
+   */
+  validatePaymentMethod(paymentMethod) {
+    if (!PAYMENT_CONFIG.SUPPORTED_METHODS.includes(paymentMethod.toLowerCase())) {
+      throw new PaymentError(
+        `Unsupported payment method. Supported methods: ${PAYMENT_CONFIG.SUPPORTED_METHODS.join(', ')}`,
+        'UNSUPPORTED_PAYMENT_METHOD'
+      );
+    }
+  }
   /**
    * Create a payment transaction
    * @param {string} sessionId
@@ -11,6 +35,9 @@ class PaymentService {
    * @returns {Promise<Object>}
    */
   async createPayment(sessionId, paymentMethod) {
+    // Validate payment method first
+    this.validatePaymentMethod(paymentMethod);
+
     const transaction = await sequelize.transaction();
 
     try {

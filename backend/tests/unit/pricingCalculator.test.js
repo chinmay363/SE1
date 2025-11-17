@@ -1,8 +1,14 @@
 const { calculateParkingFee, generateReceiptNumber } = require('../../src/utils/pricingCalculator');
 
+const PRICING_CONFIG = {
+  WEEKDAY_HOURLY_RATE: 5.0,
+  WEEKEND_HOURLY_RATE: 7.0
+};
+
 describe('Pricing Calculator', () => {
   beforeEach(() => {
     process.env.HOURLY_RATE = '5.0';
+    process.env.WEEKEND_HOURLY_RATE = '7.0';
     process.env.FIRST_HOUR_FREE = 'false';
   });
 
@@ -59,6 +65,28 @@ describe('Pricing Calculator', () => {
       const result = calculateParkingFee(entryTime, exitTime);
 
       expect(result.amount).toBe(0);
+    });
+
+    test('should apply weekend pricing on Saturday', () => {
+      // Saturday is day 6
+      const entryTime = new Date('2024-01-06T10:00:00'); // Saturday
+      const exitTime = new Date('2024-01-06T11:00:00');
+
+      const result = calculateParkingFee(entryTime, exitTime);
+
+      expect(result.hourlyRate).toBe(PRICING_CONFIG.WEEKEND_HOURLY_RATE);
+      expect(result.amount).toBe(7.0); // Weekend rate
+    });
+
+    test('should apply weekend pricing on Sunday', () => {
+      // Sunday is day 0
+      const entryTime = new Date('2024-01-07T10:00:00'); // Sunday
+      const exitTime = new Date('2024-01-07T11:00:00');
+
+      const result = calculateParkingFee(entryTime, exitTime);
+
+      expect(result.hourlyRate).toBe(PRICING_CONFIG.WEEKEND_HOURLY_RATE);
+      expect(result.amount).toBe(7.0);
     });
   });
 

@@ -38,8 +38,8 @@ const releaseSpaceValidation = [
 
 const createPaymentValidation = [
   body('sessionId').notEmpty().withMessage('Session ID is required').isUUID(),
-  body('paymentMethod').isIn(['cash', 'card', 'digital_wallet', 'mobile'])
-    .withMessage('Invalid payment method'),
+  body('paymentMethod').isIn(['credit_card', 'debit_card', 'cash', 'mobile_wallet', 'upi'])
+    .withMessage('Invalid payment method. Supported methods: credit_card, debit_card, cash, mobile_wallet, upi'),
   validate
 ];
 
