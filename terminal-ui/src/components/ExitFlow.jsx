@@ -1,21 +1,57 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import axios from 'axios'
 import BarrierAnimation from './BarrierAnimation'
 import './ExitFlow.css'
 
 function ExitFlow() {
-  const [step, setStep] = useState('input') // input, calculating, payment, processing, barrier
+  const [step, setStep] = useState('input') // input, selecting, calculating, payment, processing, barrier
   const [licensePlate, setLicensePlate] = useState('')
   const [sessionData, setSessionData] = useState(null)
   const [paymentId, setPaymentId] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [activeSessions, setActiveSessions] = useState([])
+  const [showSimulate, setShowSimulate] = useState(false)
 
   const handleLicensePlateInput = (e) => {
     setLicensePlate(e.target.value.toUpperCase())
   }
 
+  const handleSimulateExit = async () => {
+    setLoading(true)
+    setError('')
+
+    try {
+      const response = await axios.get('/parking/sessions/active')
+      const sessions = response.data.data || []
+
+      if (sessions.length === 0) {
+        setError('No active parking sessions found')
+        setLoading(false)
+        return
+      }
+
+      setActiveSessions(sessions)
+      setShowSimulate(true)
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to fetch active sessions')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSelectVehicle = (plate) => {
+    setLicensePlate(plate)
+    setShowSimulate(false)
+    setActiveSessions([])
+  }
+
   const handleCalculateFee = async () => {
+    if (!licensePlate || licensePlate.trim() === '') {
+      setError('Please enter a license plate')
+      return
+    }
+
     setLoading(true)
     setError('')
     setStep('calculating')
@@ -24,7 +60,7 @@ function ExitFlow() {
       // First get active session for this vehicle
       const sessionsRes = await axios.get('/parking/sessions/active')
       const session = sessionsRes.data.data.find(
-        s => s.vehicle.licensePlate === licensePlate
+        s => s.vehicle.licensePlate.toUpperCase() === licensePlate.toUpperCase()
       )
 
       if (!session) {
@@ -93,23 +129,64 @@ function ExitFlow() {
 
       {error && <div className="error-message">{error}</div>}
 
-      {step === 'input' && (
+      {step === 'input' && !showSimulate && (
         <div className="step-container">
-          <h3>Enter License Plate</h3>
-          <input
-            type="text"
-            value={licensePlate}
-            onChange={handleLicensePlateInput}
-            placeholder="ABC-1234"
-            className="license-input"
-            maxLength="8"
-          />
+          <h3>Enter License Plate or Simulate</h3>
+          <div className="input-options">
+            <input
+              type="text"
+              value={licensePlate}
+              onChange={handleLicensePlateInput}
+              placeholder="ABC-1234"
+              className="license-input"
+              maxLength="8"
+            />
+            <button
+              onClick={handleSimulateExit}
+              disabled={loading}
+              className="simulate-button"
+            >
+              Simulate Exit
+            </button>
+          </div>
           <button
             onClick={handleCalculateFee}
             disabled={loading || !licensePlate}
             className="primary-button"
           >
             {loading ? 'Processing...' : 'Calculate Fee'}
+          </button>
+        </div>
+      )}
+
+      {showSimulate && (
+        <div className="step-container">
+          <h3>Select a Vehicle to Exit</h3>
+          <div className="vehicle-list">
+            {activeSessions.map((session) => (
+              <div
+                key={session.id}
+                className="vehicle-card"
+                onClick={() => handleSelectVehicle(session.vehicle.licensePlate)}
+              >
+                <div className="vehicle-info">
+                  <span className="license">{session.vehicle.licensePlate}</span>
+                  <span className="space">Space: {session.space.spaceNumber}</span>
+                  <span className="entry-time">
+                    Entered: {new Date(session.entryTime).toLocaleTimeString()}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => {
+              setShowSimulate(false)
+              setActiveSessions([])
+            }}
+            className="secondary-button"
+          >
+            Back to Manual Entry
           </button>
         </div>
       )}
