@@ -141,6 +141,33 @@ LPR_PROCESSING_DELAY_MS=1000
 
 ## Testing
 
+### First Time Setup
+
+Before running tests for the first time, you need to create and set up the test database:
+
+```bash
+cd backend
+
+# Make sure PostgreSQL is running
+# Option 1: Using Docker
+cd ../infra && docker-compose up -d postgres && cd ../backend
+
+# Option 2: Local PostgreSQL
+# Make sure your local PostgreSQL service is running
+
+# Set up the test database (creates database, runs migrations, and seeds)
+npm run test:setup
+```
+
+**Note**: The test database user needs `CREATEDB` permission. If you get a permission error:
+
+```bash
+# Grant CREATEDB permission to the user
+psql -U postgres -c "ALTER USER apms_user CREATEDB;"
+```
+
+### Running Tests
+
 ```bash
 cd backend
 
@@ -154,6 +181,21 @@ npm run test:system
 
 # Run linter
 npm run lint
+```
+
+### Manual Test Database Setup
+
+If you prefer to set up the test database manually:
+
+```bash
+# Create test database
+createdb -U apms_user apms_test
+
+# Run migrations on test database
+npm run migrate:test
+
+# Seed test database
+npm run seed:test
 ```
 
 ### Coverage Goals
