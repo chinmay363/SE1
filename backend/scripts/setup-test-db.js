@@ -44,7 +44,7 @@ async function setupTestDatabase() {
 
     // Run migrations
     console.log('\n📦 Running migrations...');
-    execSync('NODE_ENV=test npx sequelize-cli db:migrate', {
+    execSync('npm run migrate:test', {
       stdio: 'inherit',
       env: {
         ...process.env,
@@ -60,7 +60,7 @@ async function setupTestDatabase() {
 
     // Run seeds
     console.log('\n🌱 Seeding database...');
-    execSync('NODE_ENV=test npx sequelize-cli db:seed:all', {
+    execSync('npm run seed:test', {
       stdio: 'inherit',
       env: {
         ...process.env,
@@ -83,7 +83,9 @@ async function setupTestDatabase() {
     if (error.code === 'ECONNREFUSED') {
       console.error('\n💡 Make sure PostgreSQL is running:');
       console.error('   - Docker: docker-compose up -d postgres');
-      console.error('   - Local: sudo service postgresql start');
+      console.error('   - Linux: sudo service postgresql start');
+      console.error('   - macOS: brew services start postgresql');
+      console.error('   - Windows: Check Services or pg_ctl start');
     } else if (error.message.includes('authentication failed')) {
       console.error('\n💡 Check your database credentials:');
       console.error(`   - User: ${DB_USER}`);

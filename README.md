@@ -162,8 +162,34 @@ npm run test:setup
 **Note**: The test database user needs `CREATEDB` permission. If you get a permission error:
 
 ```bash
-# Grant CREATEDB permission to the user
+# Linux/macOS: Grant CREATEDB permission to the user
 psql -U postgres -c "ALTER USER apms_user CREATEDB;"
+
+# Windows: Use psql.exe
+psql.exe -U postgres -c "ALTER USER apms_user CREATEDB;"
+```
+
+**For Windows users**: If `psql` is not in your PATH, find it in your PostgreSQL installation directory (usually `C:\Program Files\PostgreSQL\15\bin\`) and either add it to PATH or run it directly:
+
+```bash
+"C:\Program Files\PostgreSQL\15\bin\psql.exe" -U postgres -c "ALTER USER apms_user CREATEDB;"
+```
+
+**Alternative (SQL prompt)**: You can also use the PostgreSQL SQL prompt:
+
+```sql
+-- Connect to PostgreSQL (Windows: use psql from Start Menu or pgAdmin)
+-- Then run these SQL commands:
+ALTER USER apms_user CREATEDB;
+CREATE DATABASE apms_test OWNER apms_user;
+\q
+```
+
+Then manually run migrations and seeds:
+```bash
+cd backend
+npm run migrate:test
+npm run seed:test
 ```
 
 ### Running Tests
