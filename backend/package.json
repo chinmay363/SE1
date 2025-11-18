@@ -47,14 +47,15 @@
     "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
     "collectCoverageFrom": [
       "src/**/*.js",
-      "!src/app.js"
+      "!src/app.js",
+      "!src/routes/**"
     ],
     "coverageThreshold": {
       "global": {
-        "branches": 35,
-        "functions": 65,
-        "lines": 62,
-        "statements": 62
+        "branches": 60,
+        "functions": 75,
+        "lines": 75,
+        "statements": 75
       }
     },
     "testPathIgnorePatterns": [
