@@ -44,7 +44,7 @@ async function setupTestDatabase() {
 
     // Run migrations
     console.log('\n📦 Running migrations...');
-    execSync('NODE_ENV=test npx sequelize-cli db:migrate', {
+    execSync('npx sequelize-cli db:migrate', {
       stdio: 'inherit',
       env: {
         ...process.env,
@@ -60,7 +60,7 @@ async function setupTestDatabase() {
 
     // Run seeds
     console.log('\n🌱 Seeding database...');
-    execSync('NODE_ENV=test npx sequelize-cli db:seed:all', {
+    execSync('npx sequelize-cli db:seed:all', {
       stdio: 'inherit',
       env: {
         ...process.env,
