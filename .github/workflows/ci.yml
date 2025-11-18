@@ -115,6 +115,16 @@ jobs:
           DB_PASSWORD: apms_password
           DB_NAME: apms_test
 
+      - name: Run system tests
+        working-directory: ./backend
+        run: npx jest tests/system
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: apms_user
+          DB_PASSWORD: apms_password
+          DB_NAME: apms_test
+
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
