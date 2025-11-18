@@ -10,8 +10,11 @@
     "test:unit": "jest tests/unit --coverage",
     "test:integration": "jest tests/integration --coverage",
     "test:system": "jest tests/system --coverage",
+    "test:setup": "node scripts/setup-test-db.js",
     "migrate": "sequelize-cli db:migrate",
+    "migrate:test": "NODE_ENV=test sequelize-cli db:migrate",
     "seed": "sequelize-cli db:seed:all",
+    "seed:test": "NODE_ENV=test sequelize-cli db:seed:all",
     "lint": "eslint src/ tests/"
   },
   "keywords": ["parking", "automation", "license-plate"],
