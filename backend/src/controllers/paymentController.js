@@ -1,57 +1,148 @@
 const paymentService = require('../services/paymentService');
+const { PaymentError } = paymentService;
 const { generateReceipt } = require('../utils/pdfGenerator');
 
+// ============================================================================
+// CONTROLLER HELPER METHODS
+// ============================================================================
+
+/**
+ * Standardized success response
+ */
+const successResponse = (res, data, message = 'Success', statusCode = 200) => {
+  return res.status(statusCode).json({
+    success: true,
+    message,
+    data,
+    timestamp: new Date().toISOString()
+  });
+};
+
+/**
+ * Standardized error response
+ */
+const errorResponse = (res, error, statusCode = 500) => {
+  return res.status(statusCode).json({
+    success: false,
+    message: error.message || 'Internal server error',
+    code: error.code || 'INTERNAL_ERROR',
+    timestamp: new Date().toISOString()
+  });
+};
+
+// ============================================================================
+// PAYMENT CONTROLLER CLASS
+// ============================================================================
+
 class PaymentController {
+  /**
+   * Validate create payment request
+   */
+  validateCreatePaymentRequest(req) {
+    const { sessionId, paymentMethod } = req.body;
+    const errors = [];
+
+    if (!sessionId) {
+      errors.push('sessionId is required');
+    }
+
+    if (!paymentMethod) {
+      errors.push('paymentMethod is required');
+    }
+
+    if (errors.length > 0) {
+      const error = new Error('Validation failed');
+      error.code = 'VALIDATION_ERROR';
+      error.details = errors;
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+
+  /**
+   * Create payment with enhanced validation and error handling
+   */
   async createPayment(req, res, next) {
     try {
+      // Validate request
+      this.validateCreatePaymentRequest(req);
+
       const { sessionId, paymentMethod } = req.body;
 
       const result = await paymentService.createPayment(sessionId, paymentMethod);
 
-      res.json({
-        success: true,
-        message: 'Payment created',
-        data: result
-      });
+      return successResponse(res, result, 'Payment created successfully', 201);
     } catch (error) {
+      if (error instanceof PaymentError) {
+        return errorResponse(res, error, error.statusCode);
+      }
+      if (error.code === 'VALIDATION_ERROR') {
+        return errorResponse(res, error, 400);
+      }
       next(error);
     }
   }
 
+  /**
+   * Validate confirm payment request
+   */
+  validateConfirmPaymentRequest(req) {
+    const { paymentId } = req.body;
+
+    if (!paymentId) {
+      const error = new Error('paymentId is required');
+      error.code = 'VALIDATION_ERROR';
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+
+  /**
+   * Confirm payment with enhanced validation and error handling
+   */
   async confirmPayment(req, res, next) {
     try {
+      // Validate request
+      this.validateConfirmPaymentRequest(req);
+
       const { paymentId } = req.body;
 
       const result = await paymentService.confirmPayment(paymentId);
 
-      res.json({
-        success: true,
-        message: 'Payment confirmed',
-        data: result
-      });
+      return successResponse(res, result, 'Payment confirmed successfully');
     } catch (error) {
+      if (error instanceof PaymentError) {
+        return errorResponse(res, error, error.statusCode);
+      }
+      if (error.code === 'VALIDATION_ERROR') {
+        return errorResponse(res, error, 400);
+      }
       next(error);
     }
   }
 
+  /**
+   * Get payment details with validation
+   */
   async getPaymentDetails(req, res, next) {
     try {
       const { paymentId } = req.params;
 
+      if (!paymentId) {
+        return errorResponse(res, { message: 'Payment ID is required', code: 'INVALID_PAYMENT_ID' }, 400);
+      }
+
       const payment = await paymentService.getPaymentDetails(paymentId);
 
       if (!payment) {
-        return res.status(404).json({
-          success: false,
-          message: 'Payment not found'
-        });
+        return errorResponse(res, { message: 'Payment not found', code: 'PAYMENT_NOT_FOUND' }, 404);
       }
 
-      res.json({
-        success: true,
-        data: payment
-      });
+      return successResponse(res, payment, 'Payment details retrieved successfully');
     } catch (error) {
+      if (error instanceof PaymentError) {
+        return errorResponse(res, error, error.statusCode);
+      }
       next(error);
     }
   }
